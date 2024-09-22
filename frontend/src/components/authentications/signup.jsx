@@ -73,7 +73,7 @@ export const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
+
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       setloding(true);
       settoast({
@@ -90,34 +90,47 @@ export const Signup = () => {
         message: 'password donot match',
         visible: true,
       });
-      setloding(false);
       return;
     }
     try {
+     
+        setloding(true);
       const config = {
         headers: {
           "Content-type": "application/json",
         },
       };
-      const { data } = await axios.post("http://localhost:5000/api/users/signup",
-        formData,
-        config
-      );
-      settoast({
-        type: 'success',
-        message: 'register successful',
-        visible: true,
-      });
-      localStorage.setItem("userInfo", JSON.stringify(data))
-      setloding(false);
-      navigate("/chats")
+        const { data } = await axios.post("http://localhost:5000/api/users/signup",
+          formData,
+          config
+        );
+        if (data.success) {
+          //success signup
+        settoast({
+          type: 'success',
+          message: 'register successful',
+          visible: true,
+        });
+        localStorage.setItem("userInfo", JSON.stringify(data))
+        setloding(false);
+        navigate("/chats");
+      } else {
+        // failed singup
+        settoast({
+          type: 'error',
+          message:" email already exist",
+          visible: true,
+        });
+      }
+
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || "An error occurred";
       settoast({
         type: 'error',
-        message: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage),
+        message: "error!! email id already exist",
         visible: true,
       });
+      console.log(error);
+      
     }
 
   };
@@ -172,7 +185,6 @@ export const Signup = () => {
                 required
               />
             </div>
-
             <div className="mb-4">
               <label className="block text-gray-700 mb-2" htmlFor="email">
                 Email
@@ -185,11 +197,9 @@ export const Signup = () => {
                 onChange={handleChange}
                 placeholder="Enter your email"
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoComplete='email'
-                required
+                autoComplete="email"
               />
             </div>
-
             <div className="mb-4">
               <label className="block text-gray-700 mb-2" htmlFor="password">
                 Password
@@ -240,7 +250,7 @@ export const Signup = () => {
             </div>
             <button
               className={`relative inline-flex items-center px-4 py-2 font-semibold text-white bg-blue-600 rounded-md ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-              onClick={handleSubmit}
+              type='submit'
 
             >
               {loading ? (
