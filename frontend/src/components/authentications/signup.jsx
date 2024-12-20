@@ -1,9 +1,8 @@
-import React from 'react'
-import { useState } from 'react';
-import Toast from '../../../toast';
-import axios from 'axios';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-export const Signup = () => {
+import axios from 'axios';
+
+export function Signup() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,24 +10,20 @@ export const Signup = () => {
     confirmPassword: '',
     pic: '',
   });
-  const [loading, setloding] = useState(false);
-  const [passwordVisib, setpasswordVisib] = useState(false);
-  const [toast, settoast] = useState({
-    type: '',
-    message: '',
-    visible: false,
-  });
+  const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
   const postDetails = (pic) => {
-    setloding(true);
-    if (formData.pic == undefined) {
-      //toast
-      settoast({
-        type: 'error',
-        message: 'unable to picture',
-        visible: true,
-      });
-      // toast end
+    setLoading(true);
+    setError('');
+
+    if (!pic) {
+      setError('Please select an image');
+      setLoading(false);
+      return;
     }
 
     if (pic.type === "image/jpeg" || pic.type === "image/png") {
@@ -46,24 +41,23 @@ export const Signup = () => {
             ...prevFormData,
             pic: data.url.toString(),
           }));
-          setloding(false);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('Error uploading image:', err);
+          setError('Error uploading image. Please try again.');
+          setLoading(false);
         });
     } else {
-      //toast
-      settoast({
-        type: 'error',
-        message: 'unable to add this type of file',
-        visible: true,
-      });
-      //toast end
-      setloding(false);
+      setError('Please select a JPEG or PNG image');
+      setLoading(false);
     }
-
   }
 
-  const togelpass = () => {
-    setpasswordVisib(!passwordVisib);
+  const togglePassword = () => {
+    setPasswordVisible(!passwordVisible);
   }
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -73,210 +67,184 @@ export const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
 
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
-      setloding(true);
-      settoast({
-        type: 'error',
-        message: 'please and all the feilds',
-        visible: true,
-      });
-      setloding(false);
+      setError('Please fill in all fields');
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      settoast({
-        type: 'error',
-        message: 'password donot match',
-        visible: true,
-      });
+      setError('Passwords do not match');
       return;
     }
     try {
-     
-        setloding(true);
+      setLoading(true);
       const config = {
         headers: {
           "Content-type": "application/json",
         },
       };
-        const { data } = await axios.post("http://localhost:5000/api/users/signup",
-          formData,
-          config
-        );
-        if (data.success) {
-          //success signup
-        settoast({
-          type: 'success',
-          message: 'register successful',
-          visible: true,
-        });
-        localStorage.setItem("userInfo", JSON.stringify(data))
-        setloding(false);
+      const { data } = await axios.post("http://localhost:5000/api/users/signup",
+        formData,
+        config
+      );
+      if (data.success) {
+        setSuccess('Registration successful');
+        localStorage.setItem("userInfo", JSON.stringify(data));
+        setLoading(false);
         navigate("/chats");
       } else {
-        // failed singup
-        settoast({
-          type: 'error',
-          message:" email already exist",
-          visible: true,
-        });
+        setError('Registration failed. Please try again.');
+        setLoading(false);
       }
-
     } catch (error) {
-      settoast({
-        type: 'error',
-        message: "error!! email id already exist",
-        visible: true,
-      });
-      console.log(error);
-      
+      setError(error.response?.data?.message || "An error occurred. Please try again.");
+      setLoading(false);
     }
-
   };
+
   return (
-
-    <div className="container mx-auto min-auto ">
-
-      <div className="
-    h-[85px] 
-    w-[400px]
-     ml-[388px] 
-     mt-5
-     flex
-    container 
-    content-center 
-    items-center
-     justify-center
-    rounded-lg
-    text-xl
-    Work sans
-    mx-auto
-    min-auto
-    bg-slate-50">
-        <h3 className="text-center">Signup</h3>
-      </div>
-      <div className="component
-    container 
-    w-[400px] 
-    ml-[390px]
-    rounded-lg
-      content-center    
-      pt-4
-      mt-2
-      mb-7
-    bg-slate-50">
-        <div className="min-h-screen flex items-center justify-center  pb-6">
-          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm">
-            <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="name">
-                name
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Create your account
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="name" className="sr-only">
+                Name
               </label>
               <input
-                type="text"
-                name="name"
                 id="name"
+                name="name"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter your name"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoComplete='name'
-                required
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="email">
-                Email
+            <div>
+              <label htmlFor="email" className="sr-only">
+                Email address
               </label>
               <input
-                type="email"
-                name="email"
                 id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoComplete="email"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="password">
+            <div className="relative">
+              <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
-                type={passwordVisib ? 'text' : 'password'}
-                name="password"
                 id="password"
+                name="password"
+                type={passwordVisible ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter your password"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoComplete='password'
-                required
               />
-              <button onClick={togelpass} className='bg-cyan-500 p-1 m-1 rounded-sm color-sky text-slate-50 ' >{passwordVisib ? 'hide' : 'show'}</button>
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                onClick={togglePassword}
+              >
+                {passwordVisible ? (
+                  <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="confirmPassword">
+            <div>
+              <label htmlFor="confirmPassword" className="sr-only">
                 Confirm Password
               </label>
               <input
-                type="password"
-                name="confirmPassword"
                 id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your password"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoComplete='confirmpassword'
               />
             </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2" htmlFor="pic">
-                Picture
+            <div>
+              <label htmlFor="pic" className="sr-only">
+                Profile Picture
               </label>
               <input
-                type="file"
-                name="pic"
                 id="pic"
-                // value={formData.pic[0]}
-                accept='image/*'
+                name="pic"
+                type="file"
+                accept="image/*"
                 onChange={(e) => postDetails(e.target.files[0])}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
               />
             </div>
-            <button
-              className={`relative inline-flex items-center px-4 py-2 font-semibold text-white bg-blue-600 rounded-md ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-              type='submit'
+          </div>
 
+          {error && (
+            <div className="text-red-500 text-sm mt-2">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-green-500 text-sm mt-2">
+              {success}
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={loading}
             >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 mr-3 border-t-2 border-r-2 border-white rounded-full"
-                    viewBox="0 0 24 24"
-                  ></svg>
-                  Loading...
-                </>
-              ) : (
-                'Click Me'
-              )}
+              <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                <svg className="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+              </span>
+              {loading ? 'Signing up...' : 'Sign up'}
             </button>
-            <br /><br />
-            {/* Conditionally show the Toast */}
-            {toast.visible && (
-              <Toast
-                type={toast.type}
-                message={toast.message}
-                onClose={() => settoast({ ...toast, visible: false })}
-              />
-            )}
-          </form>
+          </div>
+        </form>
+        <div className="text-sm text-center">
+          Already have an account?{' '}
+          <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Log in
+          </a>
         </div>
       </div>
     </div>
-  )
+  );
 }
+

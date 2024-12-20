@@ -10,6 +10,6 @@ router.route('/signup').post(registerUser);
 router.route('/login').post(authUser);
 
 //all users
-router.route('/').get(protect,allUser);
+router.route('/allusers').get(protect,allUser);
 
 module.exports = router;    
