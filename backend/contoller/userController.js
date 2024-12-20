@@ -24,7 +24,7 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     pic,
   });
-  try{
+  try {
     if (user) {
       res.status(201).json({
         success: true,  // Indicate a successful login
@@ -40,13 +40,13 @@ const registerUser = asyncHandler(async (req, res) => {
         message: 'Invalid email or password',
       });
     }
-  }catch(err){
+  } catch (err) {
     res.status(401).json({
       success: false,  //something broke
       message: `error :- ${err.message}`,
     });
   }
- 
+
 });
 
 const authUser = async (req, res) => {
@@ -78,5 +78,18 @@ const authUser = async (req, res) => {
   }
 };
 
+const allUser = asyncHandler(async (req, res) => {
+  const keyword = req.query.search ? {
+    $or: [
+      { name: { $regex: req.query.search, $options: "i" } },
+      { email: { $regex: req.query.search, $options: "i" } },
 
-module.exports = { registerUser, authUser };
+    ],
+  } :
+    {};
+
+  const users = await User.find(keyword).find({_id:{$ne:req.user._id}});
+  res.send(users);
+})
+
+module.exports = { registerUser, authUser, allUser };

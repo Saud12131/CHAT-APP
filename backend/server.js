@@ -6,12 +6,11 @@ const http = require("http");
 const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 const User = require("./models/usermodel");
-const { log } = require("console");
 const cors = require('cors');
 const server = http.createServer(app);
-const { chats } = require("./data/data")
 const PORT = process.env.PORT || 5000;
 const userRoutes = require("./routes/userRoutes");
+const chatRoutes = require("./routes/chatroute");
 const { errorHandler, notfound } = require("./middelwares/errorhandler")
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
@@ -30,6 +29,7 @@ app.get("/", (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/chats', chatRoutes);
 
 app.use(notfound);
 app.use(errorHandler);
